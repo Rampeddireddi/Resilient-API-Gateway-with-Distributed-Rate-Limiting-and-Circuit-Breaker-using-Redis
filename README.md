@@ -17,10 +17,10 @@ The system ensures **scalability, resilience, and controlled traffic handling** 
 
 ```mermaid
 flowchart LR
-    Client -->|HTTP Request| Gateway[API Gateway (Express)]
-    Gateway -->|Rate Limit Check| Redis[(Redis)]
-    Gateway -->|Circuit Breaker Check| Redis
-    Gateway -->|Forward Request| Upstream[Upstream Service]
+    Client --> Gateway
+    Gateway -->|Rate Limit| Redis[(Redis)]
+    Gateway -->|Circuit Breaker| Redis
+    Gateway -->|Proxy| Upstream[Upstream Service]
     Upstream --> Gateway
     Gateway --> Client
 ```
