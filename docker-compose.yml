@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  upstream-service:
+    build: ./upstream_service
+    container_name: upstream-service
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  proxy-service:
+    build: .
+    container_name: proxy-service
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      UPSTREAM_URL: http://upstream-service:5001
+
+      RATE_LIMIT_CAPACITY: 100
+      RATE_LIMIT_REFILL_RATE: 10
+
+      CIRCUIT_BREAKER_FAILURE_THRESHOLD: 5
+      CIRCUIT_BREAKER_RESET_TIMEOUT_SECONDS: 30
+      CIRCUIT_BREAKER_HALF_OPEN_SUCCESS_THRESHOLD: 2
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      upstream-service:
+        condition: service_healthy
